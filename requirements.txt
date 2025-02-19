@@ -1,0 +1,16 @@
+
+torch
+torchvision
+transformers
+sentence-transformers
+
+
+Pillow
+
+numpy
+
+fastapi
+uvicorn
+pydantic
+python-multipart
+tqdm
