@@ -46,6 +46,7 @@ async def retrieve_images(request: RetrievalRequest):
         results = retriever.retrieve(request.query, request.n)
         return results
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

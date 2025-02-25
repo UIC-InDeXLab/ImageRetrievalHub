@@ -25,12 +25,18 @@ class FLAVARetriever(BaseRetriever):
 
             with torch.no_grad():
                 outputs = self.model.get_image_features(**inputs)
-                # Assume outputs shape is [1, num_tokens, hidden_size] (e.g. [1, 197, D]).
                 # Pool by taking the first token (CLS token).
-                features = outputs[:, 0, :]  # Now shape is [1, hidden_size]
+                features = outputs[:, 0, :]  # shape: [1, hidden_size]
+
+            # Detach and move features to CPU to free GPU memory
+            features = features.detach().cpu()
             image_features.append(features)
 
-        # Concatenate features along batch dimension; result shape: [num_images, hidden_size]
+            # Optionally, clear cache every N images:
+            # if some_condition:
+            #     torch.cuda.empty_cache()
+
+        # Concatenate features along the batch dimension; result shape: [num_images, hidden_size]
         self.preprocessed_data["image_features"] = torch.cat(image_features, dim=0)
 
     def retrieve(self, query: str, n: int = 5) -> List[str]:
@@ -38,19 +44,17 @@ class FLAVARetriever(BaseRetriever):
 
         # Process the text query
         text_inputs = self.processor(text=query, return_tensors="pt").to(self.device)
-
         with torch.no_grad():
             text_features = self.model.get_text_features(**text_inputs)
-            # Assume text_features shape is [1, num_tokens, hidden_size] (e.g. [1, 6, D]).
-            # Pool by taking the first token.
-            text_features = text_features[:, 0, :]  # Now shape is [1, hidden_size]
+            # Pool by taking the first token (CLS token)
+            text_features = text_features[:, 0, :]  # Shape: [1, hidden_size]
 
-        # Expand text_features so it can be compared to each image feature
         num_images = self.preprocessed_data["image_features"].shape[0]
         text_features_expanded = text_features.expand(num_images, -1)  # Shape: [num_images, hidden_size]
 
-        # Compute cosine similarity between the text vector and each image vector
-        similarities = F.cosine_similarity(self.preprocessed_data["image_features"], text_features_expanded, dim=1)
+        # Make sure image features are on the same device as text features
+        image_features = self.preprocessed_data["image_features"].to(self.device)
+        similarities = F.cosine_similarity(image_features, text_features_expanded, dim=1)
 
         # Get indices of the top n most similar images
         top_indices = similarities.argsort(descending=True)[:n]
