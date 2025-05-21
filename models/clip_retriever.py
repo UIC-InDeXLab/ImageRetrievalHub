@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from models.model_interfaces import BaseRetriever
 import torch
@@ -31,7 +31,7 @@ class CLIPRetriever(BaseRetriever):
         # Concatenate all features
         self.preprocessed_data["image_features"] = torch.cat(image_features)
 
-    def retrieve(self, query: str, n: int = 5) -> List[str]:
+    def retrieve(self, query: str, n: int = 5) -> List[Tuple[str, float]]:
         self.initialize()
 
         # Process text query
@@ -47,4 +47,5 @@ class CLIPRetriever(BaseRetriever):
 
         # Get top n matches
         top_indices = similarities.argsort(descending=True)[:n]
-        return [str(self.image_paths[idx]) for idx in top_indices]
+        scores = similarities.sort(descending=True)[:n]
+        return [(str(self.image_paths[idx]), float(score)) for idx, score in zip(top_indices, scores)]

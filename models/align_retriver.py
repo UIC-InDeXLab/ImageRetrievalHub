@@ -1,9 +1,11 @@
-from models.model_interfaces import BaseRetriever
+from typing import List, Tuple
+
 import torch
 from PIL import Image
-from transformers import AutoProcessor, AutoModel
-from typing import List
 from tqdm import tqdm
+from transformers import AutoProcessor, AutoModel
+
+from models.model_interfaces import BaseRetriever
 
 
 class ALIGNRetriever(BaseRetriever):
@@ -34,7 +36,7 @@ class ALIGNRetriever(BaseRetriever):
             image_features.append(features)
         self.preprocessed_data["image_features"] = torch.cat(image_features, dim=0)
 
-    def retrieve(self, query: str, n: int = 5) -> List[str]:
+    def retrieve(self, query: str, n: int = 5) -> List[Tuple[str, float]]:
         self.initialize()
         text_inputs = self.text_processor(text=query, return_tensors="pt").to(self.device)
         with torch.no_grad():
@@ -50,4 +52,5 @@ class ALIGNRetriever(BaseRetriever):
         # Compute cosine similarities (dot product on normalized vectors)
         similarities = torch.matmul(text_features, image_features.T).squeeze(0)
         top_indices = similarities.argsort(descending=True)[:n]
-        return [str(self.image_paths[idx]) for idx in top_indices]
+        scores = similarities.sort(descending=True)[:n]
+        return [(str(self.image_paths[idx]), float(score)) for idx, score in zip(top_indices, scores)]

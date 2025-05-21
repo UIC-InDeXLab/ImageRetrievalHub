@@ -1,11 +1,10 @@
-from typing import List
+from typing import List, Tuple
 
 import torch
 from PIL import Image
 from sentence_transformers import SentenceTransformer
-from transformers import BlipProcessor, BlipForConditionalGeneration
-
 from tqdm import tqdm
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 from models.model_interfaces import BaseRetriever
 
@@ -48,7 +47,7 @@ class BLIPRetriever(BaseRetriever):
         self.preprocessed_data["captions"] = image_captions
         self.preprocessed_data["caption_embeddings"] = torch.stack(caption_embeddings)
 
-    def retrieve(self, query: str, n: int = 5) -> List[str]:
+    def retrieve(self, query: str, n: int = 5) -> List[Tuple[str, float]]:
         self.initialize()
 
         # Generate embedding for the query
@@ -63,4 +62,5 @@ class BLIPRetriever(BaseRetriever):
 
         # Get top n matches
         top_indices = similarities.argsort(descending=True)[:n]
-        return [str(self.image_paths[idx]) for idx in top_indices]
+        scores = similarities.sort(descending=True)[:n]
+        return [(str(self.image_paths[idx]), float(score)) for idx, score in zip(top_indices, scores)]

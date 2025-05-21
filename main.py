@@ -26,7 +26,7 @@ class RetrievalRequest(BaseModel):
 app = FastAPI(title="Image Retrieval API")
 
 # Initialize retrievers with image directory
-IMAGE_DIR = "/home/mahdi/datasets/COCO/train2017/"
+IMAGE_DIR = "/home/mahdi/Projects/Needle/backend/resources/nocaps"
 
 retrievers = {
     ModelType.CLIP: CLIPRetriever(IMAGE_DIR),

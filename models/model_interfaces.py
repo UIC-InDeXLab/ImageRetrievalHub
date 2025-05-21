@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import numpy as np
 
 class BaseRetriever(ABC):
@@ -18,8 +18,8 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def retrieve(self, query: str, n: int = 5) -> List[str]:
-        """Retrieve n most relevant images for the given query."""
+    def retrieve(self, query: str, n: int = 5) -> List[Tuple[str, float]]:
+        """Retrieve n most relevant images for the given query and their score."""
         pass
 
     def initialize(self) -> None:
